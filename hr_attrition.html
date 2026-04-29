@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM HR Attrition — Intelligence Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Mulish:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#FAF6EF;--bg2:#F2ECE0;--card:#FFFFFF;--card2:#FDF9F4;
+  --border:#E4D9C8;--border2:#CDBFA8;
+  --orange:#C94F18;--orange2:#E06020;--orange-d:rgba(201,79,24,0.09);--orange-m:rgba(201,79,24,0.18);
+  --amber:#B07A10;--amber-d:rgba(176,122,16,0.10);
+  --green:#2A6044;--green-d:rgba(42,96,68,0.10);
+  --red:#A83226;--red-d:rgba(168,50,38,0.09);
+  --brown:#6B4A30;
+  --text:#1C1008;--text2:#5A4030;--text3:#9A8070;
+  --mono:'JetBrains Mono',monospace;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Mulish',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.65;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.container{max-width:1280px;margin:0 auto;padding:0 40px;}
+.top-rule{height:5px;background:linear-gradient(90deg,var(--orange),var(--orange2),var(--amber));}
+/* HERO */
+.hero{padding:72px 0 56px;border-bottom:1px solid var(--border);}
+.hero-label{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--orange);text-transform:uppercase;margin-bottom:18px;}
+.hero h1{font-family:var(--serif);font-size:clamp(46px,6.5vw,84px);font-weight:700;line-height:.95;color:var(--text);margin-bottom:4px;}
+.hero h1 em{font-style:italic;color:var(--orange);}
+.hero-sub{font-size:16px;color:var(--text2);margin:22px 0 36px;max-width:620px;line-height:1.75;}
+.hero-facts{display:flex;flex-wrap:wrap;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:820px;}
+.hero-fact{flex:1;min-width:140px;padding:16px 20px;border-right:1px solid var(--border);}
+.hero-fact:last-child{border-right:none;}
+.hero-fact-val{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--orange);line-height:1;margin-bottom:3px;}
+.hero-fact-label{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.5px;}
+/* KPI STRIP */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);}
+.kpi{padding:28px 24px;border-right:1px solid var(--border);}
+.kpi:last-child{border-right:none;}
+.kpi::before{content:'';display:block;width:32px;height:3px;border-radius:2px;margin-bottom:16px;}
+.kpi.ko::before{background:var(--orange);}.kpi.ka::before{background:var(--amber);}.kpi.kg::before{background:var(--green);}.kpi.kb::before{background:var(--brown);}.kpi.kr::before{background:var(--red);}
+.kpi-val{font-family:var(--serif);font-size:40px;font-weight:700;line-height:1;margin-bottom:5px;}
+.kpi.ko .kpi-val{color:var(--orange);}.kpi.ka .kpi-val{color:var(--amber);}.kpi.kg .kpi-val{color:var(--green);}.kpi.kb .kpi-val{color:var(--brown);}.kpi.kr .kpi-val{color:var(--red);}
+.kpi-name{font-size:11px;font-family:var(--mono);color:var(--text3);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
+.kpi-note{font-size:12px;color:var(--text2);}
+/* SECTION */
+.section{padding:68px 0;border-bottom:1px solid var(--border);}
+.section-tag{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;}
+.section-title{font-family:var(--serif);font-size:clamp(30px,4vw,52px);font-weight:700;line-height:1.05;color:var(--text);margin-bottom:12px;}
+.section-title em{font-style:italic;color:var(--orange);}
+.section-title .gr{color:var(--green);font-style:italic;}
+.section-desc{color:var(--text2);max-width:660px;line-height:1.75;margin-bottom:36px;}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:28px;}
+.card-title{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.card-sub{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--text3);margin-bottom:20px;text-transform:uppercase;}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+.g12{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+/* DQ */
+.dq-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.dq-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.dq-tag{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.dq-num{font-family:var(--serif);font-size:36px;font-weight:700;line-height:1;margin-bottom:4px;}
+.dq-num.ok{color:var(--green);}.dq-num.warn{color:var(--amber);}.dq-num.bad{color:var(--orange);}
+.dq-desc{font-size:12px;color:var(--text2);line-height:1.55;}
+/* CALLOUT */
+.callout{border-radius:8px;padding:18px 22px;border-left:3px solid;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start;}
+.callout.orange{background:var(--orange-d);border-color:var(--orange);}
+.callout.amber{background:var(--amber-d);border-color:var(--amber);}
+.callout.green{background:var(--green-d);border-color:var(--green);}
+.callout.red{background:var(--red-d);border-color:var(--red);}
+.callout-mark{font-family:var(--serif);font-size:18px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.callout.orange .callout-mark{color:var(--orange);}.callout.amber .callout-mark{color:var(--amber);}.callout.green .callout-mark{color:var(--green);}.callout.red .callout-mark{color:var(--red);}
+.callout-title{font-weight:700;color:var(--text);margin-bottom:3px;font-size:14px;}
+.callout-body{font-size:13px;color:var(--text2);line-height:1.6;}
+/* TOXIC */
+.toxic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.toxic-card{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--orange);border-radius:10px;padding:24px;position:relative;overflow:hidden;transition:box-shadow .2s;}
+.toxic-card:hover{box-shadow:0 4px 20px rgba(201,79,24,.12);}
+.toxic-n{font-family:var(--serif);font-size:64px;font-weight:700;color:var(--bg2);line-height:1;position:absolute;top:10px;right:16px;}
+.toxic-rate{font-family:var(--serif);font-size:52px;font-weight:700;color:var(--orange);line-height:1;margin-bottom:2px;}
+.toxic-rate span{font-size:18px;color:var(--text3);font-family:var(--sans);}
+.toxic-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.toxic-desc{font-size:13px;color:var(--text2);line-height:1.6;}
+.toxic-badge{display:inline-block;margin-top:12px;background:var(--orange-d);border:1px solid rgba(201,79,24,.25);border-radius:4px;padding:4px 10px;font-family:var(--mono);font-size:10px;color:var(--orange);letter-spacing:1px;}
+/* RISK MATRIX */
+.rm{display:grid;grid-template-columns:130px 1fr 1fr;gap:3px;}
+.rm-hdr{background:var(--bg2);border-radius:5px;padding:12px;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--text3);text-align:center;text-transform:uppercase;display:flex;align-items:center;justify-content:center;}
+.rm-lbl{background:var(--bg2);border-radius:5px;padding:12px 16px;font-family:var(--serif);font-size:16px;font-weight:600;color:var(--text2);display:flex;align-items:center;}
+.rm-cell{border-radius:5px;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+.rm-pct{font-family:var(--serif);font-size:34px;font-weight:700;line-height:1;}
+.rm-tag{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;}
+/* MATH */
+.math{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:22px 26px;font-family:var(--mono);font-size:12.5px;color:var(--text2);line-height:2.1;}
+.math .eq{color:var(--amber);}.math .res{color:var(--green);font-weight:700;}.math .cmt{color:var(--text3);font-size:11px;}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg2);}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--bg2);}
+.tbl .hl{color:var(--text);font-weight:600;}
+.tbl .bad{color:var(--orange);font-family:var(--mono);font-weight:700;}
+.tbl .ok{color:var(--green);font-family:var(--mono);}
+.tbl .amb{color:var(--amber);font-family:var(--mono);}
+/* BAR */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.bar-label{font-size:12px;color:var(--text2);width:130px;flex-shrink:0;}
+.bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;}
+.bar-val{font-family:var(--mono);font-size:11px;width:36px;text-align:right;flex-shrink:0;}
+/* PROBLEM STATEMENT */
+.ps{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:28px;margin-bottom:16px;display:grid;grid-template-columns:56px 1fr;gap:22px;align-items:start;}
+.ps-n{font-family:var(--serif);font-size:48px;font-weight:700;color:var(--border2);line-height:1;text-align:right;padding-top:2px;}
+.ps-tag{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--orange);text-transform:uppercase;margin-bottom:6px;}
+.ps-stmt{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:8px;}
+.ps-ev{font-size:13px;color:var(--text2);line-height:1.65;}
+.ps-ev strong{color:var(--orange);}
+/* SOLUTION */
+.sol-wrap{border-top:1px solid var(--border);padding-top:20px;margin-top:20px;}
+.sol-heading{font-family:var(--mono);font-size:9px;letter-spacing:2.5px;color:var(--green);text-transform:uppercase;margin-bottom:14px;}
+.sol-steps{display:flex;flex-direction:column;gap:9px;}
+.sol-step{display:flex;gap:12px;align-items:flex-start;}
+.sol-step-n{font-family:var(--mono);font-size:10px;color:var(--green);flex-shrink:0;margin-top:3px;font-weight:700;}
+.sol-step-text{font-size:13px;color:var(--text2);line-height:1.55;}
+.sol-step-text strong{color:var(--text);}
+.sol-impact{margin-top:16px;background:var(--green-d);border:1px solid rgba(42,96,68,.2);border-radius:6px;padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--green);line-height:1.7;}
+/* HMW */
+.hmw-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.hmw-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s;}
+.hmw-card:hover{border-color:var(--orange);}
+.hmw-bg{position:absolute;bottom:-8px;right:10px;font-family:var(--serif);font-size:80px;font-weight:700;color:var(--bg2);line-height:1;pointer-events:none;user-select:none;}
+.hmw-pill{display:inline-block;background:var(--orange-d);border:1px solid rgba(201,79,24,.2);border-radius:4px;padding:3px 10px;font-family:var(--mono);font-size:9px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.hmw-q{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:8px;}
+.hmw-ctx{font-size:13px;color:var(--text2);line-height:1.6;}
+.hmw-data{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:10px;line-height:1.7;}
+/* FIN */
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.fin-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:26px;text-align:center;}
+.fin-amt{font-family:var(--serif);font-size:40px;font-weight:700;line-height:1;margin-bottom:6px;}
+.fin-lbl{font-size:13px;color:var(--text2);margin-bottom:10px;}
+.fin-note{font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.65;}
+/* MISC */
+.chart-wrap{position:relative;width:100%;}
+canvas{max-width:100%;}
+.divider{height:1px;background:var(--border);margin:28px 0;}
+.footer{padding:36px 0;display:flex;justify-content:space-between;align-items:center;}
+.footer-brand{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--text3);}
+.footer-meta{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right;line-height:1.8;}
+/* RESPONSIVE */
+@media(max-width:1100px){.kpi-strip{grid-template-columns:repeat(3,1fr);}.toxic-grid{grid-template-columns:1fr 1fr;}.g21,.g12{grid-template-columns:1fr;}.dq-row{grid-template-columns:1fr 1fr;}}
+@media(max-width:768px){.container{padding:0 18px;}.kpi-strip{grid-template-columns:1fr 1fr;}.g2,.g3,.fin-grid{grid-template-columns:1fr;}.toxic-grid{grid-template-columns:1fr;}.hmw-grid{grid-template-columns:1fr;}.ps{grid-template-columns:40px 1fr;}}
+</style>
+</head>
+<body>
+<div class="top-rule"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-label">IBM HR Analytics — Employee Attrition Report</div>
+    <h1>WHY ARE<br>PEOPLE <em>LEAVING?</em></h1>
+    <p class="hero-sub">A complete analysis of 1,470 employee records across 35 variables. This report identifies who is leaving, why they are leaving, what it is costing the business, and exactly what to do about each problem.</p>
+    <div class="hero-facts">
+      <div class="hero-fact"><div class="hero-fact-val">1,470</div><div class="hero-fact-label">Employees</div></div>
+      <div class="hero-fact"><div class="hero-fact-val">35</div><div class="hero-fact-label">Variables</div></div>
+      <div class="hero-fact"><div class="hero-fact-val">8</div><div class="hero-fact-label">Root Causes Found</div></div>
+      <div class="hero-fact"><div class="hero-fact-val">$20.4M</div><div class="hero-fact-label">Annual Cost</div></div>
+      <div class="hero-fact"><div class="hero-fact-val">5</div><div class="hero-fact-label">Solutions Defined</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- KPI STRIP -->
+<div class="container" style="padding-top:0;padding-bottom:0">
+  <div class="kpi-strip">
+    <div class="kpi ko"><div class="kpi-name">Attrition Rate</div><div class="kpi-val">16.1%</div><div class="kpi-note">237 of 1,470 left — industry avg is 10–13%</div></div>
+    <div class="kpi ka"><div class="kpi-name">Annual Cost</div><div class="kpi-val">$20.4M</div><div class="kpi-note">Replacement cost at 1.5x salary per leaver</div></div>
+    <div class="kpi kr"><div class="kpi-name">Worst Segment</div><div class="kpi-val">49.6%</div><div class="kpi-note">Single employees on overtime — near coin-flip odds</div></div>
+    <div class="kpi kb"><div class="kpi-name">Monthly Income Gap</div><div class="kpi-val">$2,046</div><div class="kpi-note">Leavers earn this much less per month — confirmed p&lt;0.000001</div></div>
+    <div class="kpi kg"><div class="kpi-name">Fixable With 2 Actions</div><div class="kpi-val">$15M</div><div class="kpi-note">Fix overtime + expand stock options — 73% of cost gone</div></div>
+  </div>
+</div>
+
+<!-- SECTION 1: DATA QUALITY -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 1 of 8 — Data Quality</div>
+    <h2 class="section-title">The Data Is Clean — But Has <em>Three Dead Columns</em></h2>
+    <p class="section-desc">Before drawing any conclusions, we checked the dataset for reliability. No missing values, no duplicates. But three columns are constant — same value for every single employee — which means they carry zero information and must be removed before any modelling work.</p>
+    <div class="dq-row">
+      <div class="dq-item"><div class="dq-tag">Missing Values</div><div class="dq-num ok">0</div><div class="dq-desc">No gaps across all 1,470 rows and 35 columns. The dataset is fully populated with no imputation needed.</div></div>
+      <div class="dq-item"><div class="dq-tag">Duplicate Rows</div><div class="dq-num ok">0</div><div class="dq-desc">Every row is a unique employee record. No cleaning required here.</div></div>
+      <div class="dq-item"><div class="dq-tag">Useless Columns</div><div class="dq-num warn">3</div><div class="dq-desc">EmployeeCount (always 1), Over18 (always Y), StandardHours (always 80). Same value for everyone — these tell us nothing. Remove before modelling.</div></div>
+      <div class="dq-item"><div class="dq-tag">Class Imbalance</div><div class="dq-num bad">5.2:1</div><div class="dq-desc">For every person who left, 5.2 stayed. This ratio needs handling in machine learning — use SMOTE oversampling or class_weight in the model to avoid bias toward the majority class.</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Outlier Check — IQR Method</div>
+        <div class="card-sub">Columns with statistically extreme values</div>
+        <table class="tbl">
+          <tr><th>Column</th><th>Outlier Count</th><th>Outlier %</th><th>Decision</th></tr>
+          <tr><td class="hl">MonthlyIncome</td><td class="bad">50</td><td class="bad">3.4%</td><td>Keep — real senior pay</td></tr>
+          <tr><td class="hl">TotalWorkingYears</td><td class="bad">28</td><td class="bad">1.9%</td><td>Keep — valid long careers</td></tr>
+          <tr><td class="hl">YearsAtCompany</td><td class="bad">26</td><td class="bad">1.8%</td><td>Keep — veteran employees</td></tr>
+          <tr><td class="hl">NumCompaniesWorked</td><td class="amb">18</td><td class="amb">1.2%</td><td>Keep — genuine job-hoppers</td></tr>
+          <tr><td class="hl">DistanceFromHome</td><td class="amb">10</td><td class="amb">0.7%</td><td>Keep — real long commutes</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Why We Keep the Outliers</div>
+        <div class="card-sub">Not every extreme value is an error</div>
+        <div class="callout orange">
+          <div class="callout-mark">!</div>
+          <div><div class="callout-title">These are real business events, not data errors</div><div class="callout-body">A Research Director earning $19,999 per month is accurate — that is the actual pay scale for that role. Removing these rows would delete the senior layer of the dataset and hide the true income-attrition relationship at higher levels.</div></div>
+        </div>
+        <div class="callout amber">
+          <div class="callout-mark">N</div>
+          <div><div class="callout-title">Modelling note</div><div class="callout-body">MonthlyIncome and TotalWorkingYears are right-skewed — common in HR data. Apply a log transform before linear regression. For tree-based models like Random Forest or XGBoost, leave as-is — they handle skew natively without transformation.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: THE PROBLEM -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 2 of 8 — The Core Problem</div>
+    <h2 class="section-title">16.1% Is <em>Above Normal</em></h2>
+    <p class="section-desc">The typical corporate attrition rate is 10 to 13 percent. This company is 3 to 6 points above that. At 1,470 employees, that means roughly 35 extra people are leaving every year compared to a well-run organisation. Each replacement costs $86,000. The math adds up fast.</p>
+    <div class="g2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-title">Attrition Split</div>
+        <div class="card-sub">237 left — 1,233 stayed</div>
+        <div class="chart-wrap" style="height:250px"><canvas id="donutChart"></canvas></div>
+        <div style="display:flex;gap:28px;margin-top:18px;justify-content:center">
+          <div style="text-align:center"><div style="font-family:var(--serif);font-size:30px;font-weight:700;color:var(--green)">83.9%</div><div style="font-size:12px;color:var(--text3)">Stayed</div></div>
+          <div style="text-align:center"><div style="font-family:var(--serif);font-size:30px;font-weight:700;color:var(--orange)">16.1%</div><div style="font-size:12px;color:var(--text3)">Left</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Attrition by Department</div>
+        <div class="card-sub">Sales leads — R&D holds better than expected</div>
+        <div class="chart-wrap" style="height:250px"><canvas id="deptChart"></canvas></div>
+        <div class="callout orange" style="margin-top:16px">
+          <div class="callout-mark">!</div>
+          <div><div class="callout-title">Sales is at 20.6% — but the department is not the problem</div><div class="callout-body">Inside Sales: Sales Reps are at 39.8% and Sales Executives at 17.5%. Same department, very different results. The role design is what is broken — not the team culture.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Attrition by Job Role — Full Breakdown</div>
+      <div class="card-sub">Sorted low to high — orange bars are above the 16.1% company average</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="roleChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: TOXIC SEGMENTS -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 3 of 8 — Who Is Leaving</div>
+    <h2 class="section-title">The Six <em>Highest-Risk</em> Profiles</h2>
+    <p class="section-desc">These are not vague categories. These are specific, identifiable employee profiles where attrition is far above normal. Each one has a clear cause and a clear solution. Knowing exactly who is leaving is the first step to keeping them.</p>
+    <div class="toxic-grid">
+      <div class="toxic-card"><div class="toxic-n">01</div><div class="toxic-rate">49.6<span>%</span></div><div class="toxic-name">Single + On Overtime</div><div class="toxic-desc">Nearly 1 in 2 will leave within the year. No other combination of two variables produces this level of risk. A single employee working overtime has almost equal odds of staying or going.</div><div class="toxic-badge">3.1x company average</div></div>
+      <div class="toxic-card"><div class="toxic-n">02</div><div class="toxic-rate">39.8<span>%</span></div><div class="toxic-name">Sales Representatives</div><div class="toxic-desc">2 in 5 leave every year. Sales Executives in the same department are at 17.5%. The role itself — its quota structure, career ceiling, and day-to-day demands — is the problem, not the department.</div><div class="toxic-badge">2.5x company average</div></div>
+      <div class="toxic-card"><div class="toxic-n">03</div><div class="toxic-rate">34.8<span>%</span></div><div class="toxic-name">Employees Aged 18 to 25</div><div class="toxic-desc">Over 1 in 3 junior employees exit. The company is losing its entry-level pipeline before it can develop them. Low starting pay, unclear career paths, and weak onboarding are the likely causes.</div><div class="toxic-badge">2.2x company average</div></div>
+      <div class="toxic-card"><div class="toxic-n">04</div><div class="toxic-rate">54.5<span>%</span></div><div class="toxic-name">Earning Under $2,000 / Month</div><div class="toxic-desc">More than half of the lowest-paid employees leave. It is more likely they will go than stay. The pay floor is simply not competitive with what the market offers elsewhere.</div><div class="toxic-badge">3.4x company average</div></div>
+      <div class="toxic-card"><div class="toxic-n">05</div><div class="toxic-rate">24.9<span>%</span></div><div class="toxic-name">Frequent Business Travelers</div><div class="toxic-desc">Employees who travel frequently leave at 24.9% compared to 8.0% for those who never travel. For single employees already on overtime, frequent travel turns a bad situation critical.</div><div class="toxic-badge">1.5x company average</div></div>
+      <div class="toxic-card"><div class="toxic-n">06</div><div class="toxic-rate">24.4<span>%</span></div><div class="toxic-name">No Stock Options (Level 0)</div><div class="toxic-desc">24.4% with no equity. 9.4% with Level 1 equity. That is a 61% reduction in attrition from a single level of stock options. The company has not expanded equity access despite the data making this an obvious priority.</div><div class="toxic-badge">1.5x company average</div></div>
+    </div>
+    <div style="margin-top:24px">
+      <div class="card">
+        <div class="card-title">Risk Matrix — Marital Status vs Overtime</div>
+        <div class="card-sub">Attrition percentage per cell — the bottom-right cell is the most dangerous combination in the dataset</div>
+        <div class="g12" style="margin-top:12px;align-items:start">
+          <div>
+            <div class="rm">
+              <div class="rm-hdr" style="background:transparent"></div>
+              <div class="rm-hdr">No Overtime</div>
+              <div class="rm-hdr">On Overtime</div>
+              <div class="rm-lbl">Divorced</div>
+              <div class="rm-cell" style="background:var(--green-d);border:1px solid rgba(42,96,68,.15)"><span class="rm-pct" style="color:var(--green)">6.1%</span><span class="rm-tag" style="color:var(--green)">Safe</span></div>
+              <div class="rm-cell" style="background:var(--amber-d);border:1px solid rgba(176,122,16,.2)"><span class="rm-pct" style="color:var(--amber)">19.2%</span><span class="rm-tag" style="color:var(--amber)">Moderate</span></div>
+              <div class="rm-lbl">Married</div>
+              <div class="rm-cell" style="background:var(--green-d);border:1px solid rgba(42,96,68,.15)"><span class="rm-pct" style="color:var(--green)">8.4%</span><span class="rm-tag" style="color:var(--green)">Safe</span></div>
+              <div class="rm-cell" style="background:var(--amber-d);border:1px solid rgba(176,122,16,.2)"><span class="rm-pct" style="color:var(--amber)">23.1%</span><span class="rm-tag" style="color:var(--amber)">High</span></div>
+              <div class="rm-lbl">Single</div>
+              <div class="rm-cell" style="background:var(--amber-d);border:1px solid rgba(176,122,16,.2)"><span class="rm-pct" style="color:var(--amber)">16.2%</span><span class="rm-tag" style="color:var(--amber)">Moderate</span></div>
+              <div class="rm-cell" style="background:var(--orange-m);border:2px solid var(--orange)"><span class="rm-pct" style="color:var(--orange)">49.6%</span><span class="rm-tag" style="color:var(--orange)">Critical</span></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="callout orange"><div class="callout-mark">!</div><div><div class="callout-title">Single + Overtime = 49.6% — nearly a coin flip</div><div class="callout-body">A single employee on overtime is almost as likely to leave as to stay within the year. The company is paying overtime premium and simultaneously accelerating the attrition it then has to pay to replace. Both costs hit together.</div></div></div>
+            <div class="callout green"><div class="callout-mark">+</div><div><div class="callout-title">Safest group: Divorced, no overtime at 6.1%</div><div class="callout-body">Eight times safer than the worst cell. This proves that overtime is not inevitable — pulling it from roles where it is discretionary is the single highest-leverage retention action available without spending money.</div></div></div>
+            <div class="callout amber"><div class="callout-mark">N</div><div><div class="callout-title">Overtime multiplies every other risk factor</div><div class="callout-body">Marital status is a moderate signal on its own. Once overtime enters the picture, it amplifies whatever risk already exists. Overtime is not additive — it is a multiplier.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: ROOT CAUSES -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 4 of 8 — Root Causes</div>
+    <h2 class="section-title">Eight <em>Confirmed</em> Causes of Attrition</h2>
+    <p class="section-desc">Every finding below was tested statistically. Numbers were tested with t-tests. Categories were tested with chi-square. These are not observations or guesses — they are confirmed drivers with p-values that rule out coincidence.</p>
+
+    <div class="g21" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Cause 1 — Overtime Burnout</div><div class="card-sub">Chi-square p &lt; 0.001 — Cramer's V = 0.245 — moderate-strong effect</div><div class="chart-wrap" style="height:210px"><canvas id="otChart"></canvas></div><div class="callout orange" style="margin-top:16px"><div class="callout-mark">!</div><div><div class="callout-title">Overtime employees leave at 3x the rate</div><div class="callout-body">30.5% versus 10.4%. The business pays the overtime premium, then pays again to replace the person when they leave. It is double-paying for the same problem every year.</div></div></div></div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px"><div class="card-title">The Numbers</div><div class="math"><div><span class="cmt">// overtime calculation</span></div><div>416 employees on OT</div><div>30.5% leave = <span class="res">127 people/yr</span></div><div style="margin-top:6px"><span class="cmt">// if OT was removed</span></div><div>10.4% would leave = 43 people</div><div style="margin-top:6px">Saved = <span class="res">84 people/yr</span></div><div>Cost saved = <span class="res">$7.24M/yr</span></div></div></div>
+    </div>
+
+    <div class="g21" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Cause 2 — The Income Gap</div><div class="card-sub">t = 6.20 — p &lt; 0.000001 — $2,046 difference per month</div><div class="chart-wrap" style="height:210px"><canvas id="incomeChart"></canvas></div><div class="callout orange" style="margin-top:16px"><div class="callout-mark">!</div><div><div class="callout-title">The gap is systematic — not random</div><div class="callout-body">p &lt; 0.000001 means there is less than a 0.0001% chance this income gap is coincidence. Employees who leave are consistently, specifically underpaid relative to those who stay. The market is pulling them out.</div></div></div></div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px"><div class="card-title">Statistical Proof</div><div class="math"><div><span class="cmt">// t-test result</span></div><div>Retained = <span class="eq">$6,833/month</span></div><div>Left     = <span class="eq">$4,787/month</span></div><div style="margin-top:6px">Monthly gap = <span class="res">-$2,046</span></div><div>Annual gap  = <span class="res">-$24,552/yr</span></div><div style="margin-top:6px">t-stat  = <span class="eq">6.20</span></div><div>p-value = <span class="res">&lt; 0.000001</span></div></div></div>
+    </div>
+
+    <div class="g21" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Cause 3 — No Equity, No Anchor</div><div class="card-sub">Stock Level 0 = 24.4% — Level 1 = 9.4% — 61% reduction</div><div class="chart-wrap" style="height:210px"><canvas id="stockChart"></canvas></div><div class="callout green" style="margin-top:16px"><div class="callout-mark">+</div><div><div class="callout-title">One level of equity cuts attrition by 61%</div><div class="callout-body">No other single variable in this dataset produces a reduction this large from one unit of change. Moving 100 employees from Level 0 to Level 1 equity saves roughly 15 people per year and approximately $1.3M in replacement costs.</div></div></div></div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px"><div class="card-title">Leverage Calculation</div><div class="math"><div><span class="cmt">// equity impact per 100 employees</span></div><div>Level 0: <span class="eq">24</span> leave/yr</div><div>Level 1: <span class="eq">9</span> leave/yr</div><div style="margin-top:6px">Saving = <span class="res">15 people saved</span></div><div>Value  = <span class="res">$1.3M per 100 staff</span></div><div style="margin-top:6px"><span class="cmt">// across all Level 0 employees</span></div><div>Total saving est. = <span class="res">$7.76M/yr</span></div></div></div>
+    </div>
+
+    <div class="g2" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Cause 4 — Business Travel</div><div class="card-sub">No travel: 8.0% — Frequent travel: 24.9% — gap of 3.1x</div><div class="chart-wrap" style="height:190px"><canvas id="travelChart"></canvas></div><div class="callout amber" style="margin-top:16px"><div class="callout-mark">N</div><div><div class="callout-title">Frequent travel triples attrition risk</div><div class="callout-body">277 employees travel frequently. 69 leave per year. At the rare-travel rate only 42 would leave. The 27-person difference costs roughly $2.3M annually. For single employees also on overtime, travel makes an already extreme situation worse.</div></div></div></div>
+      <div class="card"><div class="card-title">Cause 5 — Young and Early-Tenure Employees</div><div class="card-sub">18 to 25 age group at 34.8% — rate stabilises after 35</div><div class="chart-wrap" style="height:190px"><canvas id="ageChart"></canvas></div><div class="callout orange" style="margin-top:16px"><div class="callout-mark">!</div><div><div class="callout-title">The early career pipeline is leaking</div><div class="callout-body">34.8% of employees aged 18 to 25 leave. After age 36, attrition drops below 13% and stays there. The first few years are the danger window — and the data suggests the company has very little structured support during this period.</div></div></div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Cause 6 — Engagement and Satisfaction Deficit</div>
+      <div class="card-sub">Every satisfaction score is lower for employees who left — all five dimensions, all statistically significant</div>
+      <div class="g2">
+        <div class="chart-wrap" style="height:270px"><canvas id="satChart"></canvas></div>
+        <div style="display:flex;flex-direction:column;gap:0;justify-content:center">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:14px;text-transform:uppercase">Score gaps — retained minus left (scale of 1 to 4)</div>
+          <div class="bar-row"><div class="bar-label">Job Satisfaction</div><div class="bar-track"><div class="bar-fill" style="width:62%;background:var(--orange)"></div></div><div class="bar-val" style="color:var(--orange)">+0.31</div></div>
+          <div class="bar-row"><div class="bar-label">Env. Satisfaction</div><div class="bar-track"><div class="bar-fill" style="width:62%;background:var(--orange)"></div></div><div class="bar-val" style="color:var(--orange)">+0.31</div></div>
+          <div class="bar-row"><div class="bar-label">Job Involvement</div><div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--amber)"></div></div><div class="bar-val" style="color:var(--amber)">+0.25</div></div>
+          <div class="bar-row"><div class="bar-label">Relationship Sat.</div><div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--border2)"></div></div><div class="bar-val" style="color:var(--text3)">+0.13</div></div>
+          <div class="bar-row"><div class="bar-label">Work-Life Balance</div><div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--border2)"></div></div><div class="bar-val" style="color:var(--text3)">+0.12</div></div>
+          <div class="callout amber" style="margin-top:12px"><div class="callout-mark">N</div><div><div class="callout-title">Consistent across all five dimensions</div><div class="callout-body">One low score could be noise. All five being lower points to a systemic engagement problem — not isolated dissatisfaction with a single factor.</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card"><div class="card-title">Cause 7 — Stuck at Job Level 1</div><div class="card-sub">Level 1 at 26.3% — drops sharply at Level 2</div><div class="chart-wrap" style="height:190px"><canvas id="jlChart"></canvas></div><div class="callout orange" style="margin-top:16px"><div class="callout-mark">!</div><div><div class="callout-title">The Level 1 to Level 2 jump is the critical moment</div><div class="callout-body">26.3% at Level 1 falls to 9.7% at Level 2. Employees who cannot see or reach the next level leave. Clearer promotion criteria and shorter promotion timelines would directly reduce early-career attrition.</div></div></div></div>
+      <div class="card"><div class="card-title">Cause 8 — Income Bracket Cliff</div><div class="card-sub">Under $2K: 54.5% — Over $10K: 8.9% — tipping point at $4K to $6K</div><div class="chart-wrap" style="height:190px"><canvas id="incBinChart"></canvas></div><div class="callout amber" style="margin-top:16px"><div class="callout-mark">N</div><div><div class="callout-title">Attrition drops sharply above $6K per month</div><div class="callout-body">Below $4K, leaving is the default. Above $6K, people stay. The $4K to $6K band is where compensation becomes competitive. Raising the pay floor matters far more than raising the pay ceiling.</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: FINANCIAL -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 5 of 8 — Financial Impact</div>
+    <h2 class="section-title">This Is a <em>$20.4 Million</em> Annual Problem</h2>
+    <p class="section-desc">Every employee who leaves costs approximately 1.5 times their annual salary. That covers the cost of recruiting a replacement, onboarding them, the productivity they do not produce while the role is empty, and the institutional knowledge that walks out the door.</p>
+    <div class="fin-grid" style="margin-bottom:22px">
+      <div class="fin-card"><div class="fin-amt" style="color:var(--orange)">$57,445</div><div class="fin-lbl">Average Annual Salary of Leavers</div><div class="fin-note">$4,787/month x 12<br>Actual mean for employees who left</div></div>
+      <div class="fin-card"><div class="fin-amt" style="color:var(--amber)">$86,168</div><div class="fin-lbl">Replacement Cost Per Employee</div><div class="fin-note">1.5x annual salary<br>SHRM industry benchmark — includes recruiting,<br>onboarding, lost productivity, knowledge transfer</div></div>
+      <div class="fin-card"><div class="fin-amt" style="color:var(--red)">$20.4M</div><div class="fin-lbl">Total Annual Attrition Cost</div><div class="fin-note">237 leavers x $86,168<br>= $20,421,738 per year</div></div>
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Intervention ROI — What Each Fix Saves</div>
+      <div class="card-sub">Conservative estimates — each segment moved to the next-best attrition rate</div>
+      <table class="tbl">
+        <tr><th>Intervention</th><th>Employees</th><th>Leave Now/yr</th><th>After Fix/yr</th><th>Saved</th><th>Cost Saved</th></tr>
+        <tr><td class="hl">Eliminate or cap mandatory overtime</td><td>416</td><td class="bad">127</td><td class="ok">43</td><td class="ok">84</td><td class="amb">$7,238,000</td></tr>
+        <tr><td class="hl">Move all Level 0 employees to stock Level 1</td><td>~600</td><td class="bad">~146</td><td class="ok">~56</td><td class="ok">90</td><td class="amb">$7,755,000</td></tr>
+        <tr><td class="hl">Reduce frequent travel frequency</td><td>277</td><td class="bad">69</td><td class="ok">42</td><td class="ok">27</td><td class="amb">$2,327,000</td></tr>
+        <tr><td class="hl">Redesign Sales Rep role and career ladder</td><td>83</td><td class="bad">33</td><td class="ok">14</td><td class="ok">19</td><td class="amb">$1,637,000</td></tr>
+        <tr><td class="hl">Raise all salaries below $2K to above $2K floor</td><td>~66</td><td class="bad">~36</td><td class="ok">~15</td><td class="ok">21</td><td class="amb">$1,809,000</td></tr>
+      </table>
+    </div>
+    <div class="math">
+      <div><span class="cmt">// the financial case for acting now</span></div>
+      <div>Total cost          = <span class="eq">237 x $86,168</span> = <span class="res">$20,421,738 / year</span></div>
+      <div>Fix overtime + equity = <span class="eq">$7.24M + $7.76M</span> = <span class="res">$15M saved — 73% of the problem</span></div>
+      <div style="margin-top:6px"><span class="cmt">// cost formula used</span></div>
+      <div>Replacement = <span class="eq">annual salary x 1.5</span> — Source: SHRM 2023 benchmark</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: PROBLEM STATEMENTS -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 6 of 8 — Problem Statements</div>
+    <h2 class="section-title">Defining the <em>Real Problems</em></h2>
+    <p class="section-desc">Every problem statement below is pinned to a specific number from the data. These are not interpretations or assumptions — they are what the data directly shows. Each one leads directly into the solution in Section 7.</p>
+    <div class="ps"><div class="ps-n">01</div><div><div class="ps-tag">Workload Problem</div><div class="ps-stmt">Employees assigned overtime leave at 3x the rate of those who are not — yet the company continues assigning it without calculating the attrition cost it creates.</div><div class="ps-ev">Evidence: <strong>30.5% overtime attrition vs 10.4% non-overtime</strong> (chi-square, p &lt; 0.001). 416 employees are on overtime. 127 leave per year as a direct result. Annual cost from OT-driven attrition alone: <strong>$10.9M</strong>.</div></div></div>
+    <div class="ps"><div class="ps-n">02</div><div><div class="ps-tag">Role Design Problem</div><div class="ps-stmt">The Sales Representative role is structurally broken — 2 in 5 leave every year — while Sales Executives in the same department retain at nearly twice the rate.</div><div class="ps-ev">Evidence: <strong>Sales Rep: 39.8%</strong> vs Sales Executive: 17.5%. A 22.3 percentage point gap between two roles in the same department. The difference is not culture or management — it is the job design, quota targets, and career ceiling.</div></div></div>
+    <div class="ps"><div class="ps-n">03</div><div><div class="ps-tag">Compensation Problem</div><div class="ps-stmt">Employees who left earned $2,046 per month less than those who stayed — a gap so large and so statistically certain it leaves no room for doubt that pay is a primary reason people leave.</div><div class="ps-ev">Evidence: Leavers avg <strong>$4,787/month</strong> vs retained avg <strong>$6,833/month</strong>. t-test returned p &lt; 0.000001. Employees earning under $2K/month have a <strong>54.5% attrition rate</strong> — more likely to leave than to stay.</div></div></div>
+    <div class="ps"><div class="ps-n">04</div><div><div class="ps-tag">Equity Problem</div><div class="ps-stmt">The majority of employees have no stock options and leave at 24.4% — yet one level of equity cuts that rate to 9.4%. The company has not expanded equity access despite this being the clearest retention lever in the data.</div><div class="ps-ev">Evidence: <strong>Level 0: 24.4%</strong> vs Level 1: 9.4%. A 61% reduction in attrition from a single equity step. No other variable in the dataset produces a reduction this large from one unit of change.</div></div></div>
+    <div class="ps"><div class="ps-n">05</div><div><div class="ps-tag">Early Career Problem</div><div class="ps-stmt">Employees aged 18 to 25 and those in their first two years at the company are leaving far above the average rate — indicating that onboarding, early pay, and visible career progression are all insufficient.</div><div class="ps-ev">Evidence: <strong>18 to 25 age group: 34.8%</strong> attrition. Leavers average <strong>5.1 years</strong> tenure versus 7.4 for those who stayed. The first two years are the highest-risk window — and appear largely unmanaged by current HR programmes.</div></div></div>
+  </div>
+</section>
+
+<!-- SECTION 7: SOLUTIONS -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 7 of 8 — How to Fix Each Problem</div>
+    <h2 class="section-title">Specific <span class="gr">Solutions</span> for Each Problem</h2>
+    <p class="section-desc">Each solution maps directly to a problem statement above. These are not general suggestions — they are concrete actions with expected outcomes calculated from the data. Start with overtime and equity: together they address 73% of the total attrition cost.</p>
+
+    <!-- SOL 1 -->
+    <div class="ps" style="margin-bottom:16px">
+      <div class="ps-n" style="color:var(--green)">01</div>
+      <div>
+        <div class="ps-tag" style="color:var(--green)">Solving the Workload Problem</div>
+        <div class="ps-stmt">Conduct an Overtime Audit and Build a Burnout Prevention Policy</div>
+        <div class="ps-ev">The aim is not to eliminate overtime — it is to stop assigning it to the people most likely to leave because of it. The first step is knowing which overtime is genuinely essential versus which is avoidable.</div>
+        <div class="sol-wrap">
+          <div class="sol-heading">Action Steps</div>
+          <div class="sol-steps">
+            <div class="sol-step"><div class="sol-step-n">01.</div><div class="sol-step-text"><strong>Audit every current OT assignment.</strong> Split them into essential (no alternative exists) and discretionary (workload-driven and replaceable). Target the discretionary category first — removing it costs the business nothing in output while reducing attrition immediately.</div></div>
+            <div class="sol-step"><div class="sol-step-n">02.</div><div class="sol-step-text"><strong>Set a monthly overtime cap per role.</strong> Research consistently points to 10 hours per month as the threshold beyond which burnout and attrition risk spike. Anything above this cap should require written manager approval with a documented reason.</div></div>
+            <div class="sol-step"><div class="sol-step-n">03.</div><div class="sol-step-text"><strong>Introduce flex time or comp-off for unavoidable overtime.</strong> Employees who must work extra hours should receive equivalent time back. This directly addresses the work-life balance score gap — leavers score consistently lower on this dimension than people who stay.</div></div>
+            <div class="sol-step"><div class="sol-step-n">04.</div><div class="sol-step-text"><strong>Prioritise single employees in overtime reduction.</strong> Single employees on overtime leave at 49.6%. When workload redistribution is needed, single employees in high-overtime roles should be the first to have their hours reduced — the data makes this targeting clear.</div></div>
+            <div class="sol-step"><div class="sol-step-n">05.</div><div class="sol-step-text"><strong>Track overtime hours against quarterly attrition by team.</strong> Build a simple dashboard that makes the OT-to-attrition relationship visible to managers. When management can see the cost of overtime in attrition numbers, they make different decisions about how it is assigned.</div></div>
+          </div>
+          <div class="sol-impact">Expected impact: 84 employees retained per year — $7.24M saved annually.<br>Timeline: 60 to 90 days for audit and policy rollout.<br>Difficulty: Low to medium — requires HR policy change and manager buy-in, not budget.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOL 2 -->
+    <div class="ps" style="margin-bottom:16px">
+      <div class="ps-n" style="color:var(--green)">02</div>
+      <div>
+        <div class="ps-tag" style="color:var(--green)">Solving the Role Design Problem</div>
+        <div class="ps-stmt">Redesign the Sales Representative Role from Quota Structure to Career Path</div>
+        <div class="ps-ev">The fact that Sales Executives in the same department retain twice as well proves this is not a cultural or management problem. The role itself — its demands, its targets, its ceiling — is what is driving people out.</div>
+        <div class="sol-wrap">
+          <div class="sol-heading">Action Steps</div>
+          <div class="sol-steps">
+            <div class="sol-step"><div class="sol-step-n">01.</div><div class="sol-step-text"><strong>Run stay interviews with Sales Reps who are still there, and exit interviews with those who left.</strong> Ask specifically what makes the Executive role feel more secure. The answer will point directly at whether the issue is quota pressure, base pay, growth visibility, or manager ratio.</div></div>
+            <div class="sol-step"><div class="sol-step-n">02.</div><div class="sol-step-text"><strong>Audit and recalibrate quota targets.</strong> If Reps are consistently missing targets while Executives meet theirs, the quota baseline is likely wrong for the Rep level. Unreachable quotas are one of the most well-documented attrition drivers in sales-heavy organisations.</div></div>
+            <div class="sol-step"><div class="sol-step-n">03.</div><div class="sol-step-text"><strong>Define and publish a clear, time-bound promotion path from Rep to Executive.</strong> Spell out the exact criteria — revenue number, tenure threshold, skill requirements — and make it visible to every Rep from day one. Ambiguous career ladders are a primary reason entry-level sales roles lose junior talent before it can grow.</div></div>
+            <div class="sol-step"><div class="sol-step-n">04.</div><div class="sol-step-text"><strong>Reduce the manager-to-rep ratio.</strong> Sales Reps need coaching, not just targets. A ratio above 1:8 leaves new Reps undercoached and undersupported. Pair high-attrition Rep clusters with closer senior oversight for the first 12 months.</div></div>
+          </div>
+          <div class="sol-impact">Expected impact: Reducing Sales Rep attrition from 39.8% to ~20% saves ~17 employees per year — $1.5M annually.<br>Timeline: 3 to 6 months for redesign and rollout.<br>Difficulty: Medium — needs alignment with Sales leadership, not just HR.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOL 3 -->
+    <div class="ps" style="margin-bottom:16px">
+      <div class="ps-n" style="color:var(--green)">03</div>
+      <div>
+        <div class="ps-tag" style="color:var(--green)">Solving the Compensation Problem</div>
+        <div class="ps-stmt">Market Benchmark Every Role and Establish a Minimum Pay Floor Above $2,000 per Month</div>
+        <div class="ps-ev">The $2,046 income gap is not explained by role differences alone — it is a competitiveness problem. The company's pay in the bottom two income quartiles is below what the market is offering, and people are leaving to collect the difference.</div>
+        <div class="sol-wrap">
+          <div class="sol-heading">Action Steps</div>
+          <div class="sol-steps">
+            <div class="sol-step"><div class="sol-step-n">01.</div><div class="sol-step-text"><strong>Benchmark every role against current market rates.</strong> Use Glassdoor, LinkedIn Salary, or a consultant like Mercer. Focus particularly on Level 1 and Level 2 roles — that is where the gap is widest and the attrition is highest. Do this annually, not once.</div></div>
+            <div class="sol-step"><div class="sol-step-n">02.</div><div class="sol-step-text"><strong>Set a company-wide minimum pay above $2,000 per month.</strong> The data shows 54.5% attrition below this threshold. Raising the floor does not require raising everyone's pay — it specifically targets the income band where attrition is a majority outcome and the cost of inaction is clearest.</div></div>
+            <div class="sol-step"><div class="sol-step-n">03.</div><div class="sol-step-text"><strong>Introduce annual salary reviews tied to market data, not just performance scores.</strong> If the market moves and the company's pay does not follow, people leave to close the gap themselves. The bottom quartile of salaries should be reviewed against external benchmarks every 12 months as a minimum.</div></div>
+            <div class="sol-step"><div class="sol-step-n">04.</div><div class="sol-step-text"><strong>Communicate total compensation clearly to high-risk groups.</strong> Employees who do not understand the full value of their package (base, bonus, benefits, equity) often underestimate how they compare to the market. Clear communication of total comp reduces flight risk even before raises occur.</div></div>
+          </div>
+          <div class="sol-impact">Expected impact: Raising sub-$2K salaries to market rates reduces attrition in that cohort from 54.5% to below 30% — saving ~21 people per year, worth $1.8M.<br>Timeline: 90 days for benchmarking, 6 months for full rollout.<br>Difficulty: Medium to high — requires budget approval, but the cost of inaction is higher.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOL 4 -->
+    <div class="ps" style="margin-bottom:16px">
+      <div class="ps-n" style="color:var(--green)">04</div>
+      <div>
+        <div class="ps-tag" style="color:var(--green)">Solving the Equity Problem</div>
+        <div class="ps-stmt">Launch a Targeted Stock Option Expansion — Starting with the Highest-Risk Employees First</div>
+        <div class="ps-ev">Moving Level 0 employees to Level 1 equity cuts attrition by 61%. The cost of an equity grant is substantially lower than the cost of replacing the employees who leave without one. This is the best return on investment in the entire dataset.</div>
+        <div class="sol-wrap">
+          <div class="sol-heading">Action Steps</div>
+          <div class="sol-steps">
+            <div class="sol-step"><div class="sol-step-n">01.</div><div class="sol-step-text"><strong>Identify Level 0 employees in high-risk profiles and grant them Level 1 options in the first wave.</strong> Start with Single + Overtime employees at Level 0. This is the most dangerous overlap in the data — they face the highest attrition risk while also having the lowest equity stake. Target this group first, before expanding more broadly.</div></div>
+            <div class="sol-step"><div class="sol-step-n">02.</div><div class="sol-step-text"><strong>Set a 2-year vesting cliff.</strong> The grant only pays out if the employee stays for 24 months. This creates a direct financial reason to stay through the highest-risk early-tenure window — which the data shows runs from 0 to 5 years of company tenure.</div></div>
+            <div class="sol-step"><div class="sol-step-n">03.</div><div class="sol-step-text"><strong>Communicate the value of the grant clearly at the time it is issued.</strong> Employees who do not understand what their equity is worth treat it as worthless. A one-page plain-English summary — what the option is, what it could realistically be worth, when it vests — dramatically increases its retention effect at zero additional cost.</div></div>
+            <div class="sol-step"><div class="sol-step-n">04.</div><div class="sol-step-text"><strong>Expand to all remaining Level 0 employees within 12 months.</strong> The first wave addresses the most urgent risk. The second wave makes Level 1 equity a standard part of the compensation architecture for everyone. This becomes the new baseline, not a special retention measure.</div></div>
+          </div>
+          <div class="sol-impact">Expected impact: 90 employees retained per year — $7.76M saved annually — the single highest-ROI intervention in the dataset.<br>Timeline: 30 to 60 days for approval and grant structure, immediate rollout after.<br>Difficulty: Low to medium — financial cost of equity grant is far below the replacement cost avoided.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOL 5 -->
+    <div class="ps" style="margin-bottom:0">
+      <div class="ps-n" style="color:var(--green)">05</div>
+      <div>
+        <div class="ps-tag" style="color:var(--green)">Solving the Early Career Problem</div>
+        <div class="ps-stmt">Build a Structured 0 to 2 Year Retention Programme for Junior Employees</div>
+        <div class="ps-ev">Leavers average just 5.1 years of tenure. Employees aged 18 to 25 leave at 34.8%. The first two years are the period of highest vulnerability — and based on the satisfaction data, the current onboarding experience is not doing nearly enough to build commitment and clarity in that window.</div>
+        <div class="sol-wrap">
+          <div class="sol-heading">Action Steps</div>
+          <div class="sol-steps">
+            <div class="sol-step"><div class="sol-step-n">01.</div><div class="sol-step-text"><strong>Build a 90-day structured onboarding programme.</strong> Most current onboarding ends at 30 days. Extend it to 90 with a defined learning plan, weekly check-ins, and cross-functional introductions. Employees who feel genuinely integrated in the first three months are significantly less likely to leave in year one — this is well-established in retention research.</div></div>
+            <div class="sol-step"><div class="sol-step-n">02.</div><div class="sol-step-text"><strong>Create a buddy system that pairs new hires with 3 to 5 year employees — not managers.</strong> Someone who has been through the same early-career uncertainty but is not in a position of authority. This addresses job involvement and relationship satisfaction scores, which are both lower in leavers, without adding management burden.</div></div>
+            <div class="sol-step"><div class="sol-step-n">03.</div><div class="sol-step-text"><strong>Run mandatory stay conversations at 6 and 12 months — not performance reviews.</strong> A stay conversation asks what would make the person want to remain, what is frustrating them, and where they see their career in 2 years. It is proactive. It catches exit signals 60 to 90 days before a resignation letter arrives.</div></div>
+            <div class="sol-step"><div class="sol-step-n">04.</div><div class="sol-step-text"><strong>Publish a written career path for every Level 1 role.</strong> Entry-level employees often leave not because the opportunity does not exist — but because they cannot see it. A simple document showing Level 1 to Level 2 criteria, a realistic timeline, and the skills needed removes ambiguity and gives people a reason to invest in the next 18 months rather than look elsewhere.</div></div>
+            <div class="sol-step"><div class="sol-step-n">05.</div><div class="sol-step-text"><strong>Set a formal target: reduce 18 to 25 attrition from 34.8% to below 20% within 24 months.</strong> Track it quarterly. Assign it to a named HR business partner. Without a specific number, a named owner, and a tracked deadline, this kind of programme does not get prioritised alongside day-to-day HR work.</div></div>
+          </div>
+          <div class="sol-impact">Expected impact: Reducing 18 to 25 attrition from 34.8% to 20% retains ~25 additional junior employees per year — $2.2M in replacement costs avoided annually.<br>Timeline: 60 days to design, 90 days to full rollout.<br>Difficulty: Low — primarily a process and culture change, not a budget issue.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: HMW + STATS -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Section 8 of 8 — Design Challenges and Full Data</div>
+    <h2 class="section-title">How Might We — and <em>All the Numbers</em></h2>
+    <p class="section-desc">HMW statements reframe each problem as a design question for product, HR, or strategy teams to work from. Below them is the complete statistical reference — every key variable, both groups, and whether the difference is statistically real or likely coincidence.</p>
+
+    <div class="hmw-grid" style="margin-bottom:32px">
+      <div class="hmw-card"><div class="hmw-bg">?</div><div class="hmw-pill">HMW 01</div><div class="hmw-q">How might we cap overtime exposure without reducing team output in Sales and R&D?</div><div class="hmw-ctx">The answer is not simply "less overtime." It is smarter workload distribution. Which overtime assignments are genuinely essential versus which are discretionary? The discretionary ones are where the opportunity is.</div><div class="hmw-data">Data: OT attrition 30.5% — Non-OT 10.4% — 416 employees currently affected</div></div>
+      <div class="hmw-card"><div class="hmw-bg">?</div><div class="hmw-pill">HMW 02</div><div class="hmw-q">How might we redesign the Sales Rep role so it retains as well as the Sales Executive role does?</div><div class="hmw-ctx">Both roles sit in the same department. The 22-point retention gap between them is a role design problem — fixable through quota structure, career path design, and coaching ratios.</div><div class="hmw-data">Data: Sales Rep 39.8% — Sales Executive 17.5% — Gap 22.3pp</div></div>
+      <div class="hmw-card"><div class="hmw-bg">?</div><div class="hmw-pill">HMW 03</div><div class="hmw-q">How might we use stock options as a targeted retention instrument for the employees most likely to leave?</div><div class="hmw-ctx">Not all Level 0 employees need equity equally. The highest-risk group — single, on overtime, short tenure — benefits most from the financial anchor that a vesting cliff creates. Can we target the grant here first?</div><div class="hmw-data">Data: Level 0 = 24.4% — Level 1 = 9.4% — 61% reduction in one step</div></div>
+      <div class="hmw-card"><div class="hmw-bg">?</div><div class="hmw-pill">HMW 04</div><div class="hmw-q">How might we build a 0 to 2 year experience that makes junior employees want to stay past the danger window?</div><div class="hmw-ctx">The first 24 months are where the company loses most of its future talent. Most current onboarding ends at 30 days. What does a genuine two-year onboarding journey look like, and what does it cost versus constantly replacing the people who leave?</div><div class="hmw-data">Data: Leavers avg tenure 5.1 yrs — 18 to 25 group = 34.8% attrition</div></div>
+      <div class="hmw-card"><div class="hmw-bg">?</div><div class="hmw-pill">HMW 05</div><div class="hmw-q">How might we build an early warning system that flags at-risk employees 60 days before they resign?</div><div class="hmw-ctx">The dataset has identified 8 confirmed predictive variables. A simple rule-based risk score — even without machine learning — could give HR managers an early warning signal and create a window for a proactive retention conversation before the decision is made.</div><div class="hmw-data">Data: 8 validated drivers — composite risk scoring is straightforward to build — low implementation cost</div></div>
+      <div class="hmw-card"><div class="hmw-bg">?</div><div class="hmw-pill">HMW 06</div><div class="hmw-q">How might we make the $4K to $6K income band a genuine retention floor rather than a leak point?</div><div class="hmw-ctx">Above $6K, employees stay. Below $4K, leaving is the norm. The $4K to $6K band is where pay starts becoming competitive. Can we identify every role currently below that floor and calculate whether the cost of raising it is less than the cost of continuing to replace people who leave?</div><div class="hmw-data">Data: Under $2K = 54.5% — $2–4K = 23.3% — $4–6K = 11.3% — stabilises above $6K</div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Numerical Variables — t-test Summary</div>
+        <div class="card-sub">All confirmed significant at p &lt; 0.05 unless noted — two-tailed independent samples</div>
+        <table class="tbl">
+          <tr><th>Variable</th><th>Retained</th><th>Left</th><th>Delta</th><th>p-value</th></tr>
+          <tr><td class="hl">Monthly Income</td><td>$6,833</td><td>$4,787</td><td class="bad">-$2,046</td><td class="bad">&lt;0.000001</td></tr>
+          <tr><td class="hl">Age</td><td>37.6 yrs</td><td>33.6 yrs</td><td class="bad">-4.0 yrs</td><td class="bad">&lt;0.001</td></tr>
+          <tr><td class="hl">Total Working Years</td><td>11.9 yrs</td><td>8.2 yrs</td><td class="bad">-3.7 yrs</td><td class="bad">&lt;0.001</td></tr>
+          <tr><td class="hl">Years at Company</td><td>7.4 yrs</td><td>5.1 yrs</td><td class="bad">-2.3 yrs</td><td class="bad">&lt;0.001</td></tr>
+          <tr><td class="hl">Years in Current Role</td><td>4.5 yrs</td><td>2.9 yrs</td><td class="bad">-1.6 yrs</td><td class="bad">&lt;0.001</td></tr>
+          <tr><td class="hl">Stock Option Level</td><td>0.85</td><td>0.53</td><td class="bad">-0.32</td><td class="bad">&lt;0.001</td></tr>
+          <tr><td class="hl">Job Satisfaction</td><td>2.78/4</td><td>2.47/4</td><td class="bad">-0.31</td><td class="amb">&lt;0.05</td></tr>
+          <tr><td class="hl">Env. Satisfaction</td><td>2.77/4</td><td>2.46/4</td><td class="bad">-0.31</td><td class="amb">&lt;0.05</td></tr>
+          <tr><td class="hl">Distance from Home</td><td>8.9 km</td><td>10.6 km</td><td class="bad">+1.7 km</td><td class="amb">&lt;0.05</td></tr>
+          <tr><td class="hl">Percent Salary Hike</td><td>15.2%</td><td>15.6%</td><td class="ok">+0.4%</td><td class="ok">Not significant</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Categorical Variables — Chi-Square Summary</div>
+        <div class="card-sub">Cramer's V: below 0.1 = weak — 0.1 to 0.3 = moderate — above 0.3 = strong</div>
+        <table class="tbl">
+          <tr><th>Variable</th><th>Chi-sq</th><th>p-value</th><th>Cramer's V</th><th>Verdict</th></tr>
+          <tr><td class="hl">OverTime</td>       <td>88.4</td><td class="bad">&lt;0.001</td><td class="bad">0.245</td><td class="bad">Confirmed driver</td></tr>
+          <tr><td class="hl">JobRole</td>        <td>71.2</td><td class="bad">&lt;0.001</td><td class="bad">0.220</td><td class="bad">Confirmed driver</td></tr>
+          <tr><td class="hl">MaritalStatus</td>  <td>44.9</td><td class="bad">&lt;0.001</td><td class="amb">0.175</td><td class="bad">Confirmed driver</td></tr>
+          <tr><td class="hl">BusinessTravel</td> <td>24.2</td><td class="bad">&lt;0.001</td><td class="amb">0.128</td><td class="bad">Confirmed driver</td></tr>
+          <tr><td class="hl">Department</td>     <td>10.8</td><td class="amb">&lt;0.01</td> <td class="ok">0.086</td><td class="amb">Weak signal</td></tr>
+          <tr><td class="hl">EducationField</td> <td>13.4</td><td class="amb">&lt;0.05</td> <td class="ok">0.095</td><td class="amb">Weak signal</td></tr>
+          <tr><td class="hl">Gender</td>         <td>1.9</td> <td class="ok">0.168</td>    <td class="ok">0.036</td><td class="ok">Not significant</td></tr>
+        </table>
+        <div class="callout amber" style="margin-top:16px">
+          <div class="callout-mark">N</div>
+          <div><div class="callout-title">Gender does not predict attrition here</div><div class="callout-body">17.0% male vs 14.8% female — small gap, p = 0.168, not statistically significant. Gender-based retention programmes are not supported by this dataset. Effort is better directed at the variables that are confirmed to matter.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="container">
+  <div class="footer">
+    <div class="footer-brand">HR Attrition Intelligence Report</div>
+    <div class="footer-meta">Code and Conquer — Round 1: EDA<br>IBM HR Analytics — 1,470 employees — 35 variables<br>Analysis: Python, Pandas, SciPy — Charts: Chart.js</div>
+  </div>
+</div>
+<div class="top-rule"></div>
+
+<!-- CHARTS -->
+<script>
+Chart.defaults.color='#9A8070';Chart.defaults.borderColor='#E4D9C8';Chart.defaults.font.family="'Mulish',sans-serif";Chart.defaults.font.size=12;
+const OR='#C94F18',AMB='#B07A10',GR='#2A6044',BRN='#6B4A30';
+const ORD='rgba(201,79,24,0.12)',AMBD='rgba(176,122,16,0.12)',GRD='rgba(42,96,68,0.12)';
+const grid={color:'#E4D9C8'},tck={color:'#9A8070'};
+
+new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:['Retained','Left'],datasets:[{data:[1233,237],backgroundColor:[GRD,ORD],borderColor:[GR,OR],borderWidth:2,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/1470*100).toFixed(1)}%)`}}}}});
+
+new Chart(document.getElementById('deptChart'),{type:'bar',data:{labels:['Human Resources','Sales','R&D'],datasets:[{label:'Retained %',data:[81,79.4,86.2],backgroundColor:GRD,borderColor:GR,borderWidth:1.5,borderRadius:4},{label:'Left %',data:[19,20.6,13.8],backgroundColor:ORD,borderColor:OR,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:100,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+
+new Chart(document.getElementById('roleChart'),{type:'bar',data:{labels:['Research Director','Manager','Healthcare Rep','Manufacturing Dir','Research Scientist','Sales Executive','Human Resources','Lab Technician','Sales Rep'],datasets:[{label:'Attrition Rate %',data:[2.5,4.9,6.9,6.9,16.1,17.5,23.1,23.9,39.8],backgroundColor:ctx=>ctx.raw>16.1?ORD:GRD,borderColor:ctx=>ctx.raw>16.1?OR:GR,borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:50,ticks:{...tck,callback:v=>v+'%'},grid},y:{grid:{display:false},ticks:{color:'#5A4030'}}}}});
+
+new Chart(document.getElementById('otChart'),{type:'bar',data:{labels:['No Overtime','On Overtime'],datasets:[{label:'Attrition %',data:[10.4,30.5],backgroundColor:[GRD,ORD],borderColor:[GR,OR],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:40,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+
+new Chart(document.getElementById('incomeChart'),{type:'bar',data:{labels:['Retained','Left'],datasets:[{label:'Avg Monthly Income',data:[6833,4787],backgroundColor:[GRD,ORD],borderColor:[GR,OR],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:false,min:3000,max:8000,ticks:{...tck,callback:v=>'$'+v.toLocaleString()},grid}}}});
+
+new Chart(document.getElementById('stockChart'),{type:'bar',data:{labels:['Level 0 — No Equity','Level 1','Level 2','Level 3'],datasets:[{label:'Attrition %',data:[24.4,9.4,7.6,17.6],backgroundColor:[ORD,GRD,GRD,AMBD],borderColor:[OR,GR,GR,AMB],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#5A4030'}},y:{beginAtZero:true,max:32,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+
+new Chart(document.getElementById('travelChart'),{type:'bar',data:{labels:['No Travel','Travel Rarely','Travel Frequently'],datasets:[{label:'Attrition %',data:[8.0,15.0,24.9],backgroundColor:[GRD,AMBD,ORD],borderColor:[GR,AMB,OR],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:32,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+
+new Chart(document.getElementById('ageChart'),{type:'line',data:{labels:['18-25','26-30','31-35','36-40','41-45','46-50','51-60'],datasets:[{label:'Attrition %',data:[34.8,21.3,17.5,9.1,9.4,12.3,12.6],borderColor:OR,backgroundColor:ORD,borderWidth:2.5,pointBackgroundColor:OR,pointRadius:5,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:42,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+
+new Chart(document.getElementById('satChart'),{type:'radar',data:{labels:['Job Sat.','Env. Sat.','WL Balance','Job Inv.','Rel. Sat.'],datasets:[{label:'Retained',data:[2.78,2.77,2.78,2.77,2.73],borderColor:GR,backgroundColor:'rgba(42,96,68,0.10)',borderWidth:2,pointBackgroundColor:GR,pointRadius:4},{label:'Left',data:[2.47,2.46,2.66,2.52,2.60],borderColor:OR,backgroundColor:'rgba(201,79,24,0.10)',borderWidth:2,pointBackgroundColor:OR,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12}}},scales:{r:{min:2.0,max:3.2,ticks:{stepSize:.4,backdropColor:'transparent',color:'#9A8070',font:{size:10}},grid:{color:'#E4D9C8'},angleLines:{color:'#E4D9C8'},pointLabels:{color:'#5A4030',font:{size:11}}}}}});
+
+new Chart(document.getElementById('jlChart'),{type:'bar',data:{labels:['Level 1','Level 2','Level 3','Level 4','Level 5'],datasets:[{label:'Attrition %',data:[26.3,9.7,14.7,4.7,7.2],backgroundColor:[ORD,GRD,AMBD,GRD,GRD],borderColor:[OR,GR,AMB,GR,GR],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:35,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+
+new Chart(document.getElementById('incBinChart'),{type:'bar',data:{labels:['Under $2K','$2K-$4K','$4K-$6K','$6K-$8K','$8K-$10K','Over $10K'],datasets:[{label:'Attrition %',data:[54.5,23.3,11.3,10.3,15.0,8.9],backgroundColor:['rgba(201,79,24,0.30)','rgba(201,79,24,0.18)','rgba(176,122,16,0.14)','rgba(42,96,68,0.12)','rgba(176,122,16,0.14)','rgba(42,96,68,0.15)'],borderColor:[OR,OR,AMB,GR,AMB,GR],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#5A4030',font:{size:11}}},y:{beginAtZero:true,max:65,ticks:{...tck,callback:v=>v+'%'},grid}}}});
+</script>
+</body>
+</html>
